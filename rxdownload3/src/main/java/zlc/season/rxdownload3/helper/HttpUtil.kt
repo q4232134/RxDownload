@@ -1,7 +1,10 @@
 package zlc.season.rxdownload3.helper
 
+import android.content.Context
+import android.net.ConnectivityManager
 import okhttp3.internal.http.HttpHeaders
 import retrofit2.Response
+import zlc.season.rxdownload3.core.DownloadConfig
 import java.util.regex.Pattern
 
 
@@ -91,4 +94,16 @@ private fun acceptRanges(response: Response<*>): String {
         header = ""
     }
     return header
+}
+
+/**
+ * 是否为wifi连接
+ *
+ * @param mContext
+ * @return
+ */
+public fun isWifi(): Boolean {
+    val connectivityManager = DownloadConfig.context!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val activeNetInfo = connectivityManager.activeNetworkInfo
+    return activeNetInfo != null && activeNetInfo.type == ConnectivityManager.TYPE_WIFI
 }

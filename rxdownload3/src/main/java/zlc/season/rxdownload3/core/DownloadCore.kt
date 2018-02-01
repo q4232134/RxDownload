@@ -92,4 +92,6 @@ class DownloadCore {
     fun update(newMission: Mission): Maybe<Any> {
         return missionBox.update(newMission)
     }
+
+    fun get(tag: String) = missionBox.get(tag)
 }

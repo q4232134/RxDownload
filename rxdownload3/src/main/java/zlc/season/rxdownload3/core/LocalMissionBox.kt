@@ -3,13 +3,18 @@ package zlc.season.rxdownload3.core
 import io.reactivex.Flowable
 import io.reactivex.Maybe
 import io.reactivex.internal.operators.maybe.MaybeToPublisher.INSTANCE
-import io.reactivex.schedulers.Schedulers.*
+import io.reactivex.schedulers.Schedulers.newThread
 import zlc.season.rxdownload3.extension.Extension
 import zlc.season.rxdownload3.helper.ANY
 import java.io.File
 import java.util.concurrent.Semaphore
 
 class LocalMissionBox : MissionBox {
+    override fun get(tag: String): Flowable<Status>? {
+        val realMission = SET.find { it.actual.tag == tag }
+        return realMission?.getFlowable()
+    }
+
     private val maxMission = DownloadConfig.maxMission
     private val semaphore = Semaphore(maxMission, true)
 
@@ -58,22 +63,20 @@ class LocalMissionBox : MissionBox {
 
 
     override fun start(mission: Mission): Maybe<Any> {
-        val realMission = SET.find { it.actual == mission } ?:
-                return Maybe.error(RuntimeException("Mission not create"))
-
+        val realMission = SET.find { it.actual == mission }
+                ?: return Maybe.error(RuntimeException("Mission not create"))
         return realMission.start()
     }
 
     override fun stop(mission: Mission): Maybe<Any> {
-        val realMission = SET.find { it.actual == mission } ?:
-                return Maybe.error(RuntimeException("Mission not create"))
-
+        val realMission = SET.find { it.actual == mission }
+                ?: return Maybe.error(RuntimeException("Mission not create"))
         return realMission.stop()
     }
 
     override fun delete(mission: Mission, deleteFile: Boolean): Maybe<Any> {
-        val realMission = SET.find { it.actual == mission } ?:
-                return Maybe.error(RuntimeException("Mission not create"))
+        val realMission = SET.find { it.actual == mission }
+                ?: return Maybe.error(RuntimeException("Mission not create"))
         return realMission.delete(deleteFile)
     }
 
@@ -115,21 +118,21 @@ class LocalMissionBox : MissionBox {
     }
 
     override fun file(mission: Mission): Maybe<File> {
-        val realMission = SET.find { it.actual == mission } ?:
-                return Maybe.error(RuntimeException("Mission not create"))
+        val realMission = SET.find { it.actual == mission }
+                ?: return Maybe.error(RuntimeException("Mission not create"))
         return realMission.file()
     }
 
     override fun extension(mission: Mission, type: Class<out Extension>): Maybe<Any> {
-        val realMission = SET.find { it.actual == mission } ?:
-                return Maybe.error(RuntimeException("Mission not create"))
+        val realMission = SET.find { it.actual == mission }
+                ?: return Maybe.error(RuntimeException("Mission not create"))
 
         return realMission.findExtension(type).action()
     }
 
     override fun clear(mission: Mission): Maybe<Any> {
-        val realMission = SET.find { it.actual == mission } ?:
-                return Maybe.error(RuntimeException("Mission not create"))
+        val realMission = SET.find { it.actual == mission }
+                ?: return Maybe.error(RuntimeException("Mission not create"))
 
         return Maybe.create<Any> {
             //stop first.

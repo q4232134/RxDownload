@@ -2,6 +2,7 @@
     package="zlc.season.rxdownload3">
 
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application>
         <service android:name=".core.DownloadService" />

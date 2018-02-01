@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boolean = true) {
     var totalSize = 0L
     var status: Status = Normal(Status())
+    var retryTimes = 3
 
     private var semaphoreFlag = false
 
@@ -48,7 +49,6 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
     init {
         if (initFlag) {
             init()
-
         }
     }
 
@@ -65,11 +65,11 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
         }.subscribeOn(newThread()).doOnError {
             loge("init error!", it)
         }.subscribe {
-            emitStatus(status)
-            if (autoStart) {
-                realStart()
-            }
-        }
+                    emitStatus(status)
+                    if (autoStart) {
+                        realStart()
+                    }
+                }
     }
 
     private fun loadConfig() {
@@ -128,8 +128,12 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
                 .subscribeOn(newThread())
                 .flatMap { checkAndDownload() }
                 .doOnError {
-                    loge("Mission error! ${it.message}", it)
-                    emitStatusWithNotification(Failed(status, it))
+                    if (retryTimes-- > 0) {
+                        start().subscribe()
+                    } else {
+                        loge("Mission error! ${it.message}", it)
+                        emitStatusWithNotification(Failed(status, it))
+                    }
                 }
                 .doOnComplete {
                     logd("Mission complete!")
@@ -165,6 +169,7 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
     }
 
     private fun realStart() {
+        if (DownloadConfig.onlyWifiDownload && !isWifi()) throw RuntimeException("Only in wifi can be download")
         if (enableDb) {
             if (!dbActor.isExists(this)) {
                 dbActor.create(this)
@@ -266,8 +271,8 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
     }
 
     private fun download(): Flowable<out Status> {
-        return downloadType?.download() ?:
-                Flowable.error(IllegalStateException("Illegal download type"))
+        return downloadType?.download()
+                ?: Flowable.error(IllegalStateException("Illegal download type"))
     }
 
     override fun equals(other: Any?): Boolean {

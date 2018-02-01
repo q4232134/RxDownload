@@ -41,6 +41,10 @@ class DownloadService : Service() {
                     .subscribe(boolCallback::apply, errorCb::apply)
         }
 
+        fun get(tag: String, statusCallback: StatusCallback) {
+            missionBox.get(tag)?.subscribe(statusCallback::apply)
+        }
+
         fun create(mission: Mission, statusCallback: StatusCallback) {
             missionBox.create(mission).subscribe(statusCallback::apply)
         }

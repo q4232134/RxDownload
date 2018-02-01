@@ -14,11 +14,22 @@ import io.reactivex.schedulers.Schedulers.newThread
 import zlc.season.rxdownload3.core.DownloadService.ErrorCallback
 import zlc.season.rxdownload3.core.DownloadService.SuccessCallback
 import zlc.season.rxdownload3.extension.Extension
-import zlc.season.rxdownload3.helper.ANY
 import java.io.File
 
 
 class RemoteMissionBox : MissionBox {
+    override fun get(tag: String): Flowable<Status>? {
+        return Flowable.create<Status>({ emitter ->
+            startBindServiceAndDo {
+                it.get(tag, object : DownloadService.StatusCallback {
+                    override fun apply(status: Status) {
+                        emitter.onNext(status)
+                    }
+                })
+            }
+        }, LATEST).subscribeOn(newThread())
+    }
+
     var context: Context = DownloadConfig.context!!
 
     override fun isExists(mission: Mission): Maybe<Boolean> {

@@ -2,7 +2,6 @@ package zlc.season.rxdownload3.core
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import android.os.Environment.DIRECTORY_DOWNLOADS
 import android.os.Environment.getExternalStoragePublicDirectory
 import zlc.season.rxdownload3.database.DbActor
@@ -29,8 +28,10 @@ object DownloadConfig {
     internal var defaultSavePath = getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS).path
 
     var context: Context? = null
+    internal var onlyWifiDownload = false
 
     internal var fps = 30
+    internal var retryTimes = 0
 
     internal var autoStart = false
 
@@ -56,11 +57,13 @@ object DownloadConfig {
         this.maxMission = builder.maxMission
         this.maxRange = builder.maxRange
         this.defaultSavePath = builder.defaultSavePath
+        this.retryTimes = builder.retryTimes
 
         this.autoStart = builder.autoStart
 
         this.enableDb = builder.enableDb
         this.dbActor = builder.dbActor
+        this.onlyWifiDownload = builder.onlyWifiDownload
 
         if (enableDb) {
             dbActor.init()
@@ -85,7 +88,7 @@ object DownloadConfig {
     class Builder private constructor(val context: Context) {
         internal var maxMission = 3
         internal var maxRange = Runtime.getRuntime().availableProcessors() + 1
-
+        internal var retryTimes = 0
         internal var debug = true
 
         internal var autoStart = false
@@ -98,6 +101,7 @@ object DownloadConfig {
 
         internal var enableDb = false
         internal var dbActor: DbActor = SQLiteActor(context)
+        internal var onlyWifiDownload = false
 
         internal var enableService = false
 
@@ -113,6 +117,12 @@ object DownloadConfig {
                 return Builder(context.applicationContext)
             }
         }
+
+        fun setOnlyWifiDownload(only: Boolean): Builder {
+            this.onlyWifiDownload = only
+            return this
+        }
+
 
         fun setDebug(debug: Boolean): Builder {
             this.debug = debug
@@ -151,6 +161,11 @@ object DownloadConfig {
 
         fun enableService(enable: Boolean): Builder {
             this.enableService = enable
+            return this
+        }
+
+        fun setRetryTimes(times: Int): Builder {
+            this.retryTimes = times
             return this
         }
 
