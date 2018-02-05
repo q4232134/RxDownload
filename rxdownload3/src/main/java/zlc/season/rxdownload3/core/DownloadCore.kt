@@ -93,5 +93,5 @@ class DownloadCore {
         return missionBox.update(newMission)
     }
 
-    fun get(tag: String) = missionBox.get(tag)
+    fun get(mission: Mission) = missionBox.get(mission)
 }

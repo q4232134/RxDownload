@@ -18,10 +18,10 @@ import java.io.File
 
 
 class RemoteMissionBox : MissionBox {
-    override fun get(tag: String): Flowable<Status>? {
+    override fun get(mission: Mission): Flowable<Status> {
         return Flowable.create<Status>({ emitter ->
             startBindServiceAndDo {
-                it.get(tag, object : DownloadService.StatusCallback {
+                it.get(mission, object : DownloadService.StatusCallback {
                     override fun apply(status: Status) {
                         emitter.onNext(status)
                     }

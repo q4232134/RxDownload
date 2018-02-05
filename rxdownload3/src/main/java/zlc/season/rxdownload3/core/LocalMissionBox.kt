@@ -10,9 +10,16 @@ import java.io.File
 import java.util.concurrent.Semaphore
 
 class LocalMissionBox : MissionBox {
-    override fun get(tag: String): Flowable<Status>? {
-        val realMission = SET.find { it.actual.tag == tag }
-        return realMission?.getFlowable()
+    override fun get(mission: Mission): Flowable<Status> {
+        val realMission = SET.find { it.actual == mission }
+
+        return if (realMission != null) {
+            realMission.getFlowable()
+        } else {
+            val new = RealMission(mission, semaphore, autoStart = false)
+            SET.add(new)
+            new.getFlowable()
+        }
     }
 
     private val maxMission = DownloadConfig.maxMission
@@ -77,6 +84,7 @@ class LocalMissionBox : MissionBox {
     override fun delete(mission: Mission, deleteFile: Boolean): Maybe<Any> {
         val realMission = SET.find { it.actual == mission }
                 ?: return Maybe.error(RuntimeException("Mission not create"))
+        SET.remove(realMission)
         return realMission.delete(deleteFile)
     }
 
@@ -112,6 +120,7 @@ class LocalMissionBox : MissionBox {
     override fun deleteAll(deleteFile: Boolean): Maybe<Any> {
         val arrays = mutableListOf<Maybe<Any>>()
         SET.forEach { arrays.add(it.delete(deleteFile)) }
+        SET.clear()
         return Flowable.fromIterable(arrays)
                 .flatMap(INSTANCE)
                 .lastElement()

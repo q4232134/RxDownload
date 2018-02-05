@@ -34,6 +34,18 @@ open class Status(var downloadSize: Long = 0L,
         percent = nf.format(result)
         return percent
     }
+
+    companion object {
+        val Normal = 1
+        val Suspend = 2
+        val Failed = 3
+        val Succeed = 4
+
+        /**
+         * 可以开始下载的状态
+         */
+        val CAN_START = listOf(Normal, Suspend, Failed)
+    }
 }
 
 class Normal(status: Status) : Status(status)

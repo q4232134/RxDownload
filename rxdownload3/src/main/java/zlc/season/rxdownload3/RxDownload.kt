@@ -12,9 +12,7 @@ import java.io.File
 object RxDownload {
     private val downloadCore = DownloadCore()
 
-    fun get(tag: String) = downloadCore.get(tag)
-
-    fun get(mission: Mission) = downloadCore.get(mission.tag)
+    fun get(mission: Mission) = downloadCore.get(mission)
 
     fun isExists(url: String): Maybe<Boolean> {
         return isExists(Mission(url))

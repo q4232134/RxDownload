@@ -66,15 +66,19 @@ class NormalTargetFile(val mission: RealMission) {
                     val buffer = sink.buffer()
                     var readLen = source.read(buffer, byteSize)
                     while (readLen != -1L && !it.isCancelled) {
+
                         downloadSize += readLen
                         downloading.downloadSize = downloadSize
 
                         it.onNext(downloading)
+//                        sink.emit()
                         readLen = source.read(buffer, byteSize)
                     }
 
-                    shadowFile.renameTo(realFile)
-                    it.onComplete()
+                    if (!it.isCancelled) {
+                        shadowFile.renameTo(realFile)
+                        it.onComplete()
+                    }
                 }
             }
         }, BUFFER).sample(period, MILLISECONDS, true)

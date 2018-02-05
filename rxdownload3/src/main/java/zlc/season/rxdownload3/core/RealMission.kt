@@ -10,6 +10,7 @@ import io.reactivex.schedulers.Schedulers.io
 import io.reactivex.schedulers.Schedulers.newThread
 import retrofit2.Response
 import zlc.season.rxdownload3.core.DownloadConfig.defaultSavePath
+import zlc.season.rxdownload3.core.Status.Companion.CAN_START
 import zlc.season.rxdownload3.database.DbActor
 import zlc.season.rxdownload3.extension.Extension
 import zlc.season.rxdownload3.helper.*
@@ -20,7 +21,7 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit.SECONDS
 
 
-class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boolean = true) {
+class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boolean = true, autoStart: Boolean? = null) {
     var totalSize = 0L
     var status: Status = Normal(Status())
     var retryTimes = 3
@@ -42,7 +43,7 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
     private val enableDb = DownloadConfig.enableDb
     private lateinit var dbActor: DbActor
 
-    private val autoStart = DownloadConfig.autoStart
+    private val autoStart = autoStart ?: DownloadConfig.autoStart
 
     private val extensions = mutableListOf<Extension>()
 
@@ -128,16 +129,13 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
                 .subscribeOn(newThread())
                 .flatMap { checkAndDownload() }
                 .doOnError {
-                    if (retryTimes-- > 0) {
-                        start().subscribe()
-                    } else {
-                        loge("Mission error! ${it.message}", it)
-                        emitStatusWithNotification(Failed(status, it))
-                    }
+                    loge("Mission error! ${it.message}", it)
+                    emitStatusWithNotification(Failed(status, it))
                 }
                 .doOnComplete {
-                    logd("Mission complete!")
+                    logd("${actual.saveName}-Mission complete!")
                     emitStatusWithNotification(Succeed(status))
+                    extensions.forEach { it.onCompleted(this) }
                 }
                 .doOnCancel {
                     logd("Mission cancel!")
@@ -148,6 +146,9 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
                     disposable = null
                     if (semaphoreFlag) {
                         semaphore.release()
+                    }
+                    if (status is Failed && retryTimes-- > 0) {
+                        start().subscribe()
                     }
                 }
     }
@@ -173,6 +174,9 @@ class RealMission(val actual: Mission, val semaphore: Semaphore, initFlag: Boole
         if (enableDb) {
             if (!dbActor.isExists(this)) {
                 dbActor.create(this)
+            }
+            if (!CAN_START.contains(dbActor.onTransformStatus(status))) {
+                return
             }
         }
 

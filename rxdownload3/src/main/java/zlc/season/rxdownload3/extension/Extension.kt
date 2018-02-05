@@ -8,4 +8,8 @@ interface Extension {
     fun init(mission: RealMission)
 
     fun action(): Maybe<Any>
+
+    fun onCompleted(realMission: RealMission) {
+
+    }
 }

@@ -35,5 +35,5 @@ interface MissionBox {
 
     fun update(newMission: Mission): Maybe<Any>
 
-    fun get(tag: String): Flowable<Status>?
+    fun get(mission: Mission): Flowable<Status>
 }

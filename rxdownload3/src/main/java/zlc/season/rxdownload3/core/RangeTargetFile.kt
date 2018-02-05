@@ -96,8 +96,10 @@ class RangeTargetFile(val mission: RealMission) {
                                     }
                                 }
 
-                                it.onNext(ANY)
-                                it.onComplete()
+                                if (!it.isCancelled) {
+                                    it.onNext(ANY)
+                                    it.onComplete()
+                                }
                             }
                         }
                     }

@@ -139,6 +139,21 @@ open class SQLiteActor(context: Context) : DbActor {
         }
     }
 
+    override fun getStatus(mission: RealMission): Int? {
+        val readableDatabase = sqLiteOpenHelper.readableDatabase
+        val cursor = readableDatabase.rawQuery("SELECT $STATUS_FLAG FROM $TABLE_NAME where $TAG = ?",
+                arrayOf(mission.actual.tag)
+        )
+        cursor.use {
+            cursor.moveToFirst()
+            if (cursor.count == 0) {
+                return null
+            }
+            return cursor.getInt(cursor.getColumnIndexOrThrow(STATUS_FLAG))
+        }
+    }
+
+
     open fun onUpdateStatus(mission: RealMission): ContentValues {
         val cv = ContentValues()
         cv.put(CURRENT_SIZE, mission.status.downloadSize)
@@ -146,7 +161,7 @@ open class SQLiteActor(context: Context) : DbActor {
         return cv
     }
 
-    open fun onTransformStatus(status: Status): Int {
+    override fun onTransformStatus(status: Status): Int {
         return when (status) {
             is Normal -> 1
             is Suspend -> 2
